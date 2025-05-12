@@ -1,11 +1,18 @@
-
 import streamlit as st
 import pandas as pd
+import os
+from io import BytesIO
+from PyPDF2 import PdfMerger
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 
 st.set_page_config(page_title="Pontuação do Currículo", layout="wide")
-
 st.title("Sistema de Pontuação de Currículo")
-st.markdown("Preencha a **quantidade** de itens que você possui em cada categoria. O sistema calculará automaticamente a pontuação, respeitando os limites máximos por item e o total final de **100 pontos**.")
+
+nome = st.text_input("Nome completo do(a) candidato(a):")
+st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites e o total final de **100 pontos**.")
 
 # Dados base dos itens
 data = [
@@ -30,32 +37,68 @@ data = [
     ["10.1 Docência no Ensino Superior", 1.0, 8.0],
     ["10.2 Docência no Fundamental/Médio", 0.3, 3.0],
     ["10.3 Atuação em EAD", 0.2, 2.0],
-    ["10.4 Atividades profissionais nas áreas do edital", 0.25, 4.0],
+    ["10.4 Atividades profissionais relacionadas", 0.25, 4.0],
 ]
 
-# Criar DataFrame
-df = pd.DataFrame(data, columns=["Item", "Pontuação por Item", "Pontuação Máxima por Item"])
+st.divider()
+df = pd.DataFrame(data, columns=["Item", "Pontuação por Item", "Pontuação Máxima"])
 df["Quantidade"] = 0
 df["Total"] = 0.0
+comprovantes = {}
 
-# Interface com limites por item
 for i in range(len(df)):
+    item = df.at[i, "Item"]
     ponto = df.at[i, "Pontuação por Item"]
-    maximo = df.at[i, "Pontuação Máxima por Item"]
-    if ponto > 0:
-        max_qtd = int(maximo // ponto)
-    else:
-        max_qtd = 100
-    df.at[i, "Quantidade"] = st.number_input(
-        f"{df.at[i, 'Item']}", min_value=0, max_value=max_qtd, step=1, key=f"input_{i}"
-    )
+    maximo = df.at[i, "Pontuação Máxima"]
+    max_qtd = int(maximo // ponto) if ponto > 0 else 100
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        df.at[i, "Quantidade"] = st.number_input(f"{item}", min_value=0, max_value=max_qtd, step=1, key=f"qtd_{i}")
+    with col2:
+        comprovantes[item] = st.file_uploader(f"Comprovante de '{item}'", type="pdf", key=f"file_{i}")
     df.at[i, "Total"] = ponto * df.at[i, "Quantidade"]
 
-# Calcular total com limite final de 100
-total_geral = df["Total"].sum()
-pontuacao_final = min(total_geral, 100)
+pontuacao_total = min(df["Total"].sum(), 100)
+st.subheader(f"\n\n\U0001F4C8 Pontuação Final: {pontuacao_total:.2f} pontos (limite de 100)")
 
-# Exibir resultados
-st.markdown("### Resultado")
-st.dataframe(df[["Item", "Pontuação por Item", "Pontuação Máxima por Item", "Quantidade", "Total"]], use_container_width=True)
-st.subheader(f"🧮 Pontuação Total: {pontuacao_final:.2f} (limite de 100 pontos)")
+if st.button("✉️ Gerar Relatório com Anexos"):
+    if not nome.strip():
+        st.warning("Por favor, informe o nome completo do(a) candidato(a).")
+    else:
+        # Gerar PDF de relatório principal
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        elements = [Paragraph(f"Relatório de Pontuação - {nome}", styles['Title']), Spacer(1, 12)]
+        data_table = [["Item", "Quantidade", "Total"]] + df[df["Quantidade"] > 0][["Item", "Quantidade", "Total"]].values.tolist()
+        table = Table(data_table, hAlign='LEFT')
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph(f"Pontuação Final: {pontuacao_total:.2f} pontos", styles['Normal']))
+        doc.build(elements)
+
+        # Salvar PDF principal e anexar comprovantes
+        merger = PdfMerger()
+        merger.append(buffer)
+
+        for item, arquivo in comprovantes.items():
+            if arquivo is not None:
+                merger.append(arquivo)
+
+        final_output = BytesIO()
+        merger.write(final_output)
+        merger.close()
+
+        st.success("Relatório gerado com sucesso!")
+        st.download_button(
+            label="🔗 Baixar Relatório Final em PDF",
+            data=final_output.getvalue(),
+            file_name=f"relatorio_{nome.replace(' ', '_')}.pdf",
+            mime="application/pdf"
+        )
