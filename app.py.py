@@ -62,9 +62,7 @@ for i in range(len(df)):
     df.at[i, "Total"] = ponto * df.at[i, "Quantidade"]
 
 pontuacao_total = df["Total"].sum()
-st.subheader(f"
-
-📈 Pontuação Final: {pontuacao_total:.2f} pontos")
+st.subheader(f"📈 Pontuação Final: {pontuacao_total:.2f} pontos")
 
 if st.button("✉️ Gerar Relatório com Anexos"):
     if not nome.strip():
