@@ -13,7 +13,7 @@ st.title("Sistema de Pontuação de Currículo")
 st.markdown("📝 **Atenção:** Os comprovantes de um dado item devem ser enviados em **um único arquivo PDF**. Por exemplo, se você tem dois artigos referentes ao item 1.1, estes devem ser mesclados em **um único arquivo PDF** a ser enviado para o item 1.1.")
 
 nome = st.text_input("Nome completo do(a) candidato(a):")
-st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites definidos no Edital")
+st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites definidos no Edital do PPGAIG.")
 
 # Dados base dos itens com pontuações máximas revisadas corretamente
 data = [
