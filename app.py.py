@@ -1,10 +1,11 @@
+
 import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="Pontuação do Currículo", layout="wide")
 
 st.title("Sistema de Pontuação de Currículo")
-st.markdown("Preencha a **quantidade** de itens que você possui em cada categoria. O sistema calculará automaticamente a pontuação, respeitando os limites máximos.")
+st.markdown("Preencha a **quantidade** de itens que você possui em cada categoria. O sistema calculará automaticamente a pontuação, respeitando os limites máximos por item e o total final de **100 pontos**.")
 
 # Dados base dos itens
 data = [
@@ -37,17 +38,24 @@ df = pd.DataFrame(data, columns=["Item", "Pontuação por Item", "Pontuação M�
 df["Quantidade"] = 0
 df["Total"] = 0.0
 
-# Interface de preenchimento
+# Interface com limites por item
 for i in range(len(df)):
-    df.at[i, "Quantidade"] = st.number_input(f"{df.at[i, 'Item']}", min_value=0, step=1, key=f"input_{i}")
-    total = df.at[i, "Pontuação por Item"] * df.at[i, "Quantidade"]
+    ponto = df.at[i, "Pontuação por Item"]
     maximo = df.at[i, "Pontuação Máxima por Item"]
-    df.at[i, "Total"] = min(total, maximo)
+    if ponto > 0:
+        max_qtd = int(maximo // ponto)
+    else:
+        max_qtd = 100
+    df.at[i, "Quantidade"] = st.number_input(
+        f"{df.at[i, 'Item']}", min_value=0, max_value=max_qtd, step=1, key=f"input_{i}"
+    )
+    df.at[i, "Total"] = ponto * df.at[i, "Quantidade"]
 
-# Exibir tabela
+# Calcular total com limite final de 100
+total_geral = df["Total"].sum()
+pontuacao_final = min(total_geral, 100)
+
+# Exibir resultados
 st.markdown("### Resultado")
 st.dataframe(df[["Item", "Pontuação por Item", "Pontuação Máxima por Item", "Quantidade", "Total"]], use_container_width=True)
-
-# Total geral
-total_geral = df["Total"].sum()
-st.subheader(f"🧮 Pontuação Total: {total_geral:.2f}")
+st.subheader(f"🧮 Pontuação Total: {pontuacao_final:.2f} (limite de 100 pontos)")
