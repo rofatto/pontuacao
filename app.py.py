@@ -12,8 +12,9 @@ st.set_page_config(page_title="Pontuação do Currículo", layout="wide")
 st.title("Sistema de Pontuação de Currículo")
 
 nome = st.text_input("Nome completo do(a) candidato(a):")
-st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites e o total final de **100 pontos**.")
-
+st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites definidos no Edital.")
+st.markdown("📝 **Atenção:** Os comprovantes de um dado item devem ser enviados em **um único arquivo PDF**. 
+Por exemplo, se você tem dois artigos referentes ao item 1.1, estes devem ser mesclados em **um único arquivo PDF** a ser enviado para o item 1.1.")
 # Dados base dos itens com pontuações máximas revisadas corretamente
 data = [
     ["1.1 Artigo com percentil ≥ 75", 10.0, 0],
