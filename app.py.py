@@ -56,7 +56,8 @@ for i in range(len(df)):
         max_qtd = 999
     col1, col2 = st.columns([3, 2])
     with col1:
-        df.at[i, "Quantidade"] = st.number_input(f"{item} ({ponto}/unidade)", min_value=0, max_value=max_qtd, step=1, key=f"qtd_{i}")
+        unit_label = "/mês" if "6.1" in item else "/mês" if "6.2" in item else "/semestre" if "10." in item else "/artigo" if "1." in item else "/unidade"
+        df.at[i, "Quantidade"] = st.number_input(f"{item} ({ponto}{unit_label})", min_value=0, max_value=max_qtd, step=1, key=f"qtd_{i}")
     with col2:
         comprovantes[item] = st.file_uploader(f"Comprovante único em PDF de '{item}'", type="pdf", key=f"file_{i}")
     df.at[i, "Total"] = ponto * df.at[i, "Quantidade"]
