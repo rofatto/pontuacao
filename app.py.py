@@ -14,10 +14,10 @@ st.title("Sistema de Pontuação de Currículo")
 nome = st.text_input("Nome completo do(a) candidato(a):")
 st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites e o total final de **100 pontos**.")
 
-# Dados base dos itens
+# Dados base dos itens com pontuações máximas corretas
 data = [
-    ["1.1 Artigo com percentil ≥ 75", 10.0, 999],
-    ["1.2 Artigo com 50 ≤ percentil < 75", 8.0, 999],
+    ["1.1 Artigo com percentil ≥ 75", 10.0, 0],
+    ["1.2 Artigo com 50 ≤ percentil < 75", 8.0, 0],
     ["1.3 Artigo com 25 ≤ percentil < 50", 6.0, 12.0],
     ["1.4 Artigo com percentil < 25", 2.0, 4.0],
     ["1.5 Artigo sem percentil", 1.0, 2.0],
@@ -50,7 +50,10 @@ for i in range(len(df)):
     item = df.at[i, "Item"]
     ponto = df.at[i, "Pontuação por Item"]
     maximo = df.at[i, "Pontuação Máxima"]
-    max_qtd = int(maximo // ponto) if ponto > 0 else 100
+    if maximo > 0:
+        max_qtd = int(maximo // ponto)
+    else:
+        max_qtd = 999
     col1, col2 = st.columns([3, 2])
     with col1:
         df.at[i, "Quantidade"] = st.number_input(f"{item}", min_value=0, max_value=max_qtd, step=1, key=f"qtd_{i}")
@@ -89,7 +92,6 @@ if st.button("✉️ Gerar Relatório com Anexos"):
 
         for item, arquivo in comprovantes.items():
             if arquivo is not None:
-                # Criar uma página de capa para o item
                 capa_buffer = BytesIO()
                 capa_doc = SimpleDocTemplate(capa_buffer, pagesize=A4)
                 capa_elements = [Paragraph(f"Comprovante para o item: {item}", styles['Heading2'])]
