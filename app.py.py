@@ -14,7 +14,7 @@ st.title("Sistema de Pontuação de Currículo")
 nome = st.text_input("Nome completo do(a) candidato(a):")
 st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites e o total final de **100 pontos**.")
 
-# Dados base dos itens com pontuações máximas corretas
+# Dados base dos itens com pontuações máximas revisadas corretamente
 data = [
     ["1.1 Artigo com percentil ≥ 75", 10.0, 0],
     ["1.2 Artigo com 50 ≤ percentil < 75", 8.0, 0],
@@ -27,8 +27,8 @@ data = [
     ["3.2 Livro na íntegra", 4.0, 4.0],
     ["4. Curso de especialização (min 320h)", 1.0, 1.0],
     ["5. Monitoria de disciplina", 0.6, 2.4],
-    ["6.1 Iniciação científica com bolsa", 0.4, 16.0],
-    ["6.2 Iniciação científica sem bolsa", 0.2, 8.0],
+    ["6.1 Iniciação científica com bolsa", 0.4, 40.0],
+    ["6.2 Iniciação científica sem bolsa", 0.2, 40.0],
     ["7.1 Software/Aplicativo (INPI)", 1.0, 5.0],
     ["7.2 Patente (INPI)", 1.0, 5.0],
     ["7.3 Registro de cultivar (MAPA)", 1.0, 5.0],
@@ -51,7 +51,7 @@ for i in range(len(df)):
     ponto = df.at[i, "Pontuação por Item"]
     maximo = df.at[i, "Pontuação Máxima"]
     if maximo > 0:
-        max_qtd = int(maximo // ponto)
+        max_qtd = int(maximo / ponto)
     else:
         max_qtd = 999
     col1, col2 = st.columns([3, 2])
@@ -61,8 +61,10 @@ for i in range(len(df)):
         comprovantes[item] = st.file_uploader(f"Comprovante único em PDF de '{item}'", type="pdf", key=f"file_{i}")
     df.at[i, "Total"] = ponto * df.at[i, "Quantidade"]
 
-pontuacao_total = min(df["Total"].sum(), 100)
-st.subheader(f"\n\n\U0001F4C8 Pontuação Final: {pontuacao_total:.2f} pontos (limite de 100)")
+pontuacao_total = df["Total"].sum()
+st.subheader(f"
+
+📈 Pontuação Final: {pontuacao_total:.2f} pontos")
 
 if st.button("✉️ Gerar Relatório com Anexos"):
     if not nome.strip():
