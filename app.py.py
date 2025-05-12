@@ -10,10 +10,11 @@ from reportlab.lib import colors
 
 st.set_page_config(page_title="Pontuação do Currículo", layout="wide")
 st.title("Sistema de Pontuação de Currículo")
+st.markdown("📝 **Atenção:** Os comprovantes de um dado item devem ser enviados em **um único arquivo PDF**. Por exemplo, se você tem dois artigos referentes ao item 1.1, estes devem ser mesclados em **um único arquivo PDF** a ser enviado para o item 1.1.")
 
 nome = st.text_input("Nome completo do(a) candidato(a):")
-st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites definidos no Edital.")
-st.markdown("📝 **Atenção:** Os comprovantes de um dado item devem ser enviados em **um único arquivo PDF**. \n\n Por exemplo, se você tem dois artigos referentes ao item 1.1, estes devem ser mesclados em **um único arquivo PDF** a ser enviado para o item 1.1.")
+st.markdown("Preencha a **quantidade** e envie os **comprovantes em PDF** para cada item. O sistema calculará automaticamente a pontuação, respeitando os limites e o total final de **100 pontos**.")
+
 # Dados base dos itens com pontuações máximas revisadas corretamente
 data = [
     ["1.1 Artigo com percentil ≥ 75", 10.0, 0],
@@ -46,6 +47,12 @@ df["Quantidade"] = 0
 df["Total"] = 0.0
 comprovantes = {}
 
+# Novo campo: Histórico Escolar
+st.divider()
+st.markdown("### Histórico Escolar do(a) Candidato(a)")
+historico_media = st.number_input("Média aritmética das disciplinas cursadas na graduação:", min_value=0.0, max_value=10.0, step=0.01, format="%.2f")
+historico_pdf = st.file_uploader("Anexe o Histórico Escolar (PDF obrigatório)", type="pdf", key="historico")
+
 for i in range(len(df)):
     item = df.at[i, "Item"]
     ponto = df.at[i, "Pontuação por Item"]
@@ -67,6 +74,11 @@ st.subheader(f"📈 Pontuação Final: {pontuacao_total:.2f} pontos")
 
 if st.button("✉️ Gerar Relatório com Anexos"):
     if not nome.strip():
+        st.warning("Por favor, informe o nome completo do(a) candidato(a).")
+    elif historico_pdf is None:
+        st.warning("O Histórico Escolar é obrigatório. Por favor, anexe o arquivo em PDF.")
+    elif any(df["Quantidade"].iloc[i] > 0 and comprovantes[df.at[i, "Item"]] is None for i in range(len(df))):
+        st.warning("Há itens com quantidade informada, mas sem comprovante anexado. Verifique todos os campos.")
         st.warning("Por favor, informe o nome completo do(a) candidato(a).")
     else:
         # Gerar PDF de relatório principal
@@ -90,6 +102,15 @@ if st.button("✉️ Gerar Relatório com Anexos"):
         # Montar PDF final com separadores e comprovantes
         merger = PdfMerger()
         merger.append(buffer)
+
+        # Adiciona capa e histórico escolar antes dos demais comprovantes
+        if historico_pdf is not None:
+            capa_hist = BytesIO()
+            capa_doc = SimpleDocTemplate(capa_hist, pagesize=A4)
+            capa_elem = [Paragraph("Histórico Escolar", styles['Heading2']), Paragraph(f"Média Geral: {historico_media:.2f}", styles['Normal'])]
+            capa_doc.build(capa_elem)
+            merger.append(capa_hist)
+            merger.append(historico_pdf)
 
         for item, arquivo in comprovantes.items():
             if arquivo is not None:
