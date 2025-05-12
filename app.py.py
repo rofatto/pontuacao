@@ -51,12 +51,12 @@ for i in range(len(df)):
     ponto = df.at[i, "Pontuação por Item"]
     maximo = df.at[i, "Pontuação Máxima"]
     if maximo > 0:
-        max_qtd = int(maximo / ponto)
+        max_qtd = round(maximo / ponto)
     else:
         max_qtd = 999
     col1, col2 = st.columns([3, 2])
     with col1:
-        unit_label = "/mês" if "6.1" in item else "/mês" if "6.2" in item else "/semestre" if "10." in item else "/artigo" if "1." in item else "/unidade"
+        unit_label = "/mês" if "6.1" in item else "/mês" if "6.2" in item else "/semestre" if "10." in item or "5." in item else "/mês" if "6.2" in item else "/semestre" if "10." in item else "/artigo" if "1." in item else "/unidade"
         df.at[i, "Quantidade"] = st.number_input(f"{item} ({ponto}{unit_label})", min_value=0, max_value=max_qtd, step=1, key=f"qtd_{i}")
     with col2:
         comprovantes[item] = st.file_uploader(f"Comprovante único em PDF de '{item}'", type="pdf", key=f"file_{i}")
