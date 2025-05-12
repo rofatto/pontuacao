@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 from io import BytesIO
-from PyPDF2 import PdfMerger
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from PyPDF2 import PdfMerger, PdfReader, PdfWriter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer, PageBreak
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
@@ -55,7 +55,7 @@ for i in range(len(df)):
     with col1:
         df.at[i, "Quantidade"] = st.number_input(f"{item}", min_value=0, max_value=max_qtd, step=1, key=f"qtd_{i}")
     with col2:
-        comprovantes[item] = st.file_uploader(f"Comprovante de '{item}'", type="pdf", key=f"file_{i}")
+        comprovantes[item] = st.file_uploader(f"Comprovante único em PDF de '{item}'", type="pdf", key=f"file_{i}")
     df.at[i, "Total"] = ponto * df.at[i, "Quantidade"]
 
 pontuacao_total = min(df["Total"].sum(), 100)
@@ -83,12 +83,18 @@ if st.button("✉️ Gerar Relatório com Anexos"):
         elements.append(Paragraph(f"Pontuação Final: {pontuacao_total:.2f} pontos", styles['Normal']))
         doc.build(elements)
 
-        # Salvar PDF principal e anexar comprovantes
+        # Montar PDF final com separadores e comprovantes
         merger = PdfMerger()
         merger.append(buffer)
 
         for item, arquivo in comprovantes.items():
             if arquivo is not None:
+                # Criar uma página de capa para o item
+                capa_buffer = BytesIO()
+                capa_doc = SimpleDocTemplate(capa_buffer, pagesize=A4)
+                capa_elements = [Paragraph(f"Comprovante para o item: {item}", styles['Heading2'])]
+                capa_doc.build(capa_elements)
+                merger.append(capa_buffer)
                 merger.append(arquivo)
 
         final_output = BytesIO()
